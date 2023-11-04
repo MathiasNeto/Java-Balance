@@ -1,18 +1,28 @@
 package mixmatias.financeiro.models;
 
+import mixmatias.financeiro.exceptions.NullPointerExceptionPersonalized;
 import mixmatias.financeiro.interfaces.IBalance;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.security.InvalidParameterException;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class ToledoMGV6 implements IBalance<Product> {
     @Override
-    public void export(List<Product> products) {
-        String result = products.stream().map(product ->
+    public void export(List<Product> products, String path) {
+        if(products == null){
+            throw new NullPointerExceptionPersonalized("The list of products is null.");
+        }
+        try {
+            String result = products.stream().peek(product -> {
+                if (product == null) {
+                    throw new NullPointerExceptionPersonalized("One of the products is null.");
+                }
+            }).map(product ->
                 String.format("01" +
                         "1" +
                         "%06d", product.getCode()) +
@@ -45,16 +55,19 @@ public class ToledoMGV6 implements IBalance<Product> {
                         "0000000|0000|0||"
         ).collect(Collectors.joining("\n"));
 
-        System.out.println(result);
-
-
-        try {
-            File file = new File("ITENSMGV.TXT");
+            File directory = new File(path);
+            File file = new File(directory+ "/ITENSMGV.txt");
             BufferedWriter writer = new BufferedWriter(new FileWriter(file));
             writer.write(result);
             writer.close();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.err.println(e.getMessage());
+        } catch (NullPointerExceptionPersonalized e) {
+            System.err.println(e.getMessage());
+        } catch (StringIndexOutOfBoundsException e) {
+            System.err.println(e.getMessage());
+        } catch (ArrayIndexOutOfBoundsException e) {
+            System.err.println(e.getMessage());
         }
     }
 }
